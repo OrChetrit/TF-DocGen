@@ -52,12 +52,17 @@ TF-DocGen
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/tf-docgen.git
+git clone https://github.com/OrChetrit/TF-DocGen.git
 cd tf-docgen
 
 # Create a virtual environment (recommended)
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+
+# Activate the virtual environment
+# On Linux/macOS:
+source .venv/bin/activate
+# On Windows (PowerShell/CMD):
+.\.venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
