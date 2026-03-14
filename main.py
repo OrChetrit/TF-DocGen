@@ -1,5 +1,5 @@
 """
-TF-DocGen | Created by Or Chetrit | MIT License
+/* Developed by Or Chetrit | MIT License */
 Purpose: Automated HCL parsing and documentation governance.
 """
 
@@ -7,14 +7,20 @@ Purpose: Automated HCL parsing and documentation governance.
 #     tf-docgen --dir ./modules/vpc
 #     tf-docgen --dir ./modules/vpc --output ./modules/vpc/README.md
 #     tf-docgen --dir ./modules/vpc --strict   # exit 1 on governance violations
+#     tf-docgen --dir ./modules/vpc --ai-summary # use Claude for architecture summary
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import click
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+import anthropic
 
 from parser import ModuleData, parse_module
 
@@ -38,6 +44,51 @@ def render_readme(data: ModuleData, template_path: Path) -> str:
     env = _get_template_env(template_path.parent)
     template = env.get_template(template_path.name)
     return template.render(module=data)
+
+
+# ---------------------------------------------------------------------------
+# AI Summary Generation
+# ---------------------------------------------------------------------------
+
+def generate_ai_summary(data: ModuleData) -> str:
+    """Generate architecture overview using Claude API."""
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        return "[Architecture overview generation skipped - API key not found]"
+        
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        
+        # Prepare data for Claude
+        module_info = f"Module Name: {data.module_name}\nResources:\n"
+        for res in data.resources:
+            module_info += f"- {res.resource_type} {res.resource_name}\n"
+        module_info += "Variables:\n"
+        for var in data.variables:
+            module_info += f"- {var.name}: {var.description or 'No description'}\n"
+            
+        system_prompt = (
+            "As a Senior Cloud Security Architect, write a 2-3 sentence overview of what this "
+            "Terraform module does based on its resources and inputs. Focus on architectural value "
+            "for an enterprise. No fluff."
+        )
+        
+        response = client.messages.create(
+            model="claude-3-haiku-20240307",
+            max_tokens=200,
+            system=system_prompt,
+            messages=[
+                {"role": "user", "content": f"Please provide the architectural overview for this Terraform module:\n\n{module_info}"}
+            ]
+        )
+        
+        # Post-process to ensure no em-dash and start with a dot if necessary (or just replace em-dashes)
+        summary = response.content[0].text.strip()
+        summary = summary.replace("—", ".").replace("--", ".")
+        return summary
+    except Exception as exc:
+        click.secho(f"  [AI Summary] Failed to generate AI summary: {exc}", fg="yellow", err=True)
+        return "[Architecture overview generation skipped - API key not found]"
 
 
 # ---------------------------------------------------------------------------
@@ -105,6 +156,12 @@ def _print_governance_report(data: ModuleData) -> int:
     help="Exit with code 1 if any governance violations are detected.",
 )
 @click.option(
+    "--ai-summary",
+    is_flag=True,
+    default=False,
+    help="Generate an architectural overview using the Claude API.",
+)
+@click.option(
     "--dry-run",
     is_flag=True,
     default=False,
@@ -116,6 +173,7 @@ def cli(
     output_path: str | None,
     template_path: str | None,
     strict: bool,
+    ai_summary: bool,
     dry_run: bool,
 ) -> None:
     """
@@ -170,6 +228,10 @@ def cli(
         f"{len(data.resources)} resource(s).",
         err=True,
     )
+
+    if ai_summary:
+        click.secho("  Generating AI summary...", err=True)
+        data.ai_summary = generate_ai_summary(data)
 
     # Governance check — always printed to stderr; exits 1 in --strict mode
     click.secho("  Running governance checks...", err=True)

@@ -1,5 +1,5 @@
 """
-TF-DocGen | Created by Or Chetrit | MIT License
+/* Developed by Or Chetrit | MIT License */
 Purpose: Automated HCL parsing and documentation governance.
 """
 
@@ -125,6 +125,7 @@ class ModuleData:
     resources: list[TerraformResource] = field(default_factory=list)
     required_providers: dict[str, Any] = field(default_factory=dict)
     terraform_required_version: Optional[str] = None
+    ai_summary: Optional[str] = None
 
     @property
     def non_compliant_variables(self) -> list[TerraformVariable]:

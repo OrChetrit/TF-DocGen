@@ -1,3 +1,4 @@
+{# /* Developed by Or Chetrit | MIT License */ #}
 # {{ module.module_name }}
 
 <!-- BEGIN_TF_DOCS -->
@@ -5,7 +6,11 @@
 
 ## Overview
 
+{% if module.ai_summary %}
+{{ module.ai_summary }}
+{% else %}
 This document describes the interface of the **`{{ module.module_name }}`** Terraform module.
+{% endif %}
 {% if module.terraform_required_version %}
 
 **Terraform version requirement:** `{{ module.terraform_required_version }}`
