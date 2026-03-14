@@ -66,6 +66,9 @@ source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Install the package locally in editable mode
+pip install -e .
 ```
 
 ---
@@ -75,7 +78,7 @@ pip install -r requirements.txt
 ### Recommended — generate docs and enforce governance
 
 ```bash
-python main.py --dir ./my-terraform-module --strict
+tf-docgen --dir ./my-terraform-module --strict
 ```
 
 > **`--strict` mode** causes the process to exit with code `1` if any variable
@@ -84,38 +87,38 @@ python main.py --dir ./my-terraform-module --strict
 ### Basic — generate README in the module directory
 
 ```bash
-python main.py --dir ./modules/vpc
+tf-docgen --dir ./modules/vpc
 ```
 
 ### Custom output path
 
 ```bash
-python main.py --dir ./modules/vpc --output ./docs/vpc.md
+tf-docgen --dir ./modules/vpc --output ./docs/vpc.md
 ```
 
 ### Custom Jinja2 template
 
 ```bash
-python main.py --dir ./modules/vpc --template ./templates/corporate.j2
+tf-docgen --dir ./modules/vpc --template ./templates/corporate.j2
 ```
 
 ### Preview without writing (dry-run)
 
 ```bash
-python main.py --dir ./modules/vpc --dry-run
+tf-docgen --dir ./modules/vpc --dry-run
 ```
 
 ### Strict mode — fail CI on governance violations
 
 ```bash
-python main.py --dir ./modules/vpc --strict
+tf-docgen --dir ./modules/vpc --strict
 echo $?   # 1 if any variable is missing type or description
 ```
 
 ### All options
 
 ```
-Usage: main.py [OPTIONS]
+Usage: tf-docgen [OPTIONS]
 
   TF-DocGen — Terraform Module Documentation Generator.
 
@@ -159,7 +162,7 @@ jobs:
       - name: Generate README and enforce governance
         run: |
           for dir in modules/*/; do
-            python main.py --dir "$dir" --strict
+            tf-docgen --dir "$dir" --strict
           done
 
       - name: Commit updated READMEs
@@ -178,7 +181,7 @@ repos:
       - id: tf-docgen
         name: Generate Terraform module docs
         language: python
-        entry: python main.py
+        entry: tf-docgen
         args: [--dir, ., --strict]
         files: \.tf$
         pass_filenames: false
