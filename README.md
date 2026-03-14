@@ -262,4 +262,4 @@ MIT © 2026 Or Chetrit
 
 ## Author
 
-Developed by **Or Chetrit** as part of the **SecOps-to-Architect Build Path**.
+Developed by **Or Chetrit**.
